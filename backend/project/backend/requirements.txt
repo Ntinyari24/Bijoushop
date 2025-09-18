@@ -1,0 +1,16 @@
+Django
+djangorestframework
+django-cors-headers
+djangorestframework-simplejwt
+psycopg2-binary
+python-decouple
+Pillow
+stripe
+requests
+django-filter
+cloudinary
+celery
+redis
+django-extensions
+gunicorn
+whitenoise
