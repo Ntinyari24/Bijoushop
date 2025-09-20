@@ -1,6 +1,7 @@
 # 🛒 BijouShop - Complete E-commerce Platform
 
 A modern, full-stack e-commerce platform built with React, TypeScript, and Tailwind CSS on the frontend, designed for scalability and production deployment.
+Live at: https://bijoushop-frontend.onrender.com/
 
 ![BijouShop Preview](https://images.pexels.com/photos/230544/pexels-photo-230544.jpeg?auto=compress&cs=tinysrgb&w=1200)
 
