@@ -14,6 +14,7 @@ import CheckoutModal from './components/CheckoutModal';
 import Footer from './components/Footer';
 import ProductManagement from './components/ProductManagement';
 import BackendTest from './components/BackendTest';
+import LearnMorePage from './components/LearnMorePage';
 import { Product } from './types';
 
 function ShopPage({
@@ -44,16 +45,23 @@ function ShopPage({
             Jewelry that speaks to your style.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-            <button className="bg-white text-jungle-600 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-colors duration-200">
+            <button 
+              onClick={() => document.getElementById('products-section')?.scrollIntoView({ behavior: 'smooth' })}
+              className="bg-white text-jungle-600 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-colors duration-200"
+            >
               Shop Now
             </button>
-            <button className="border-2 border-white text-white px-8 py-4 rounded-xl font-semibold hover:bg-white hover:text-jungle-600 transition-all duration-200">
+            <Link
+              to="/learn-more"
+              className="border-2 border-white text-white px-8 py-4 rounded-xl font-semibold hover:bg-white hover:text-jungle-600 transition-all duration-200 inline-block text-center"
+            >
               Learn More
-            </button>
+            </Link>
           </div>
         </div>
       </div>
-      <div className="space-y-6 mb-8">
+      
+      <div id="products-section" className="space-y-6 mb-8">
         <CategoryFilter
           selectedCategory={selectedCategory}
           onCategoryChange={setSelectedCategory}
@@ -133,7 +141,11 @@ function AppContent() {
     let filtered = [...products];
     if (selectedCategory !== 'All') {
       const selectedLower = selectedCategory.toLowerCase();
-      filtered = filtered.filter(product => product.category.toLowerCase() === selectedLower);
+      filtered = filtered.filter(product => 
+        product.category.toLowerCase() === selectedLower ||
+        product.category.toLowerCase().includes(selectedLower) ||
+        selectedLower.includes(product.category.toLowerCase())
+      );
     }
     if (searchQuery) {
       filtered = filtered.filter(
@@ -222,6 +234,10 @@ function AppContent() {
         <Route
           path="/admin"
           element={isSeller ? <ProductManagement /> : <Navigate to="/" replace />}
+        />
+        <Route
+          path="/learn-more"
+          element={<LearnMorePage />}
         />
       </Routes>
 

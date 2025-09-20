@@ -3,13 +3,15 @@ import { Product } from '../types';
 import { products as initialProducts } from '../data/products';
 import { apiClient } from '../services/api';
 
+type Status = 'idle' | 'loading' | 'success' | 'error';
+
 interface ProductContextType {
   products: Product[];
-  addProduct: (product: Omit<Product, 'id'>) => void;
-  updateProduct: (id: number, updates: Partial<Product>) => void;
-  deleteProduct: (id: number) => void;
-  resetProducts: () => void;
-  loading: boolean;
+  addProduct: (product: Omit<Product, 'id'>) => Promise<void>;
+  updateProduct: (id: number, updates: Partial<Product>) => Promise<void>;
+  deleteProduct: (id: number) => Promise<void>;
+  resetProducts: () => Promise<void>;
+  status: Status;
   error: string | null;
   fetchFromBackend: () => Promise<void>;
 }
@@ -30,51 +32,40 @@ interface ProductProviderProps {
 
 export const ProductProvider: React.FC<ProductProviderProps> = ({ children }) => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch products from Django backend
-  const fetchFromBackend = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await apiClient.getProducts();
-      if (response.success && response.data?.results) {
-        // Convert Django products to frontend format (align with ProductListSerializer)
-        const backendProducts = response.data.results.map((product: any) => ({
-          id: parseInt(product.id),
-          name: product.name,
-          price: parseFloat(product.price),
-          description: product.short_description || '',
-          image: product.primary_image || '/placeholder-image.jpg',
-          category: product.category_name || 'Uncategorized',
-          rating: typeof product.rating_average === 'number' ? product.rating_average : 4.5,
-          reviewCount: typeof product.rating_count === 'number' ? product.rating_count : 40,
-          inStock: !!product.is_in_stock,
-          tags: Array.isArray(product.tags) ? product.tags : (product.category_name ? [String(product.category_name).toLowerCase()] : []),
-          variants: [],
-        }));
-        setProducts(backendProducts);
-        localStorage.setItem('bijouShopProducts', JSON.stringify(backendProducts));
-      } else {
-        throw new Error(response.message || 'Failed to fetch products');
-      }
-    } catch (err: any) {
-      console.error('Failed to fetch products from backend:', err);
-      setError(err.message);
-      // Fallback to static data
-      loadStaticProducts();
-    } finally {
-      setLoading(false);
-    }
-  };
+  // --- Normalizer for backend data ---
+  const mapBackendProduct = (product: any): Product => ({
+    id: Number(product.id) || product.id,
+    name: product.name,
+    price: parseFloat(product.price),
+    description: product.short_description || '',
+    image: product.primary_image || '/placeholder-image.jpg',
+    category: product.category_name || 'Uncategorized',
+    categorySlug:
+      product.category_slug ||
+      (product.category_name
+        ? product.category_name.toLowerCase().replace(/\s+/g, '-')
+        : 'uncategorized'),
+    rating: product.rating_average ?? 0,
+    reviewCount: product.rating_count ?? 0,
+    inStock: !!product.is_in_stock,
+    tags: Array.isArray(product.tags)
+      ? product.tags
+      : product.category_slug
+      ? [product.category_slug]
+      : [],
+    variants: [],
+  });
 
-  // Load static products (fallback)
+  // --- Load cached or static products ---
   const loadStaticProducts = () => {
     const savedProducts = localStorage.getItem('bijouShopProducts');
     if (savedProducts) {
       try {
-        setProducts(JSON.parse(savedProducts));
+        const parsed = JSON.parse(savedProducts);
+        setProducts(parsed);
       } catch (error) {
         console.error('Error parsing saved products:', error);
         setProducts(initialProducts);
@@ -84,42 +75,83 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({ children }) =>
     }
   };
 
-  // Load products on mount - try backend first, fallback to static
+  // --- Fetch fresh products from backend ---
+  const fetchFromBackend = async () => {
+    setStatus('loading');
+    setError(null);
+    try {
+      const response = await apiClient.getProducts();
+      if (response.success && response.data?.results) {
+        const backendProducts = response.data.results.map(mapBackendProduct);
+        setProducts(backendProducts);
+        localStorage.setItem('bijouShopProducts', JSON.stringify(backendProducts));
+        setStatus('success');
+      } else {
+        throw new Error(response.message || 'Failed to fetch products');
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch products from backend:', err);
+      setError(err.message);
+      setStatus('error');
+    }
+  };
+
+  // --- Hybrid: load cache immediately, fetch fresh in background ---
   useEffect(() => {
-    fetchFromBackend();
+    loadStaticProducts(); // instant UI
+    fetchFromBackend(); // background refresh
   }, []);
 
-  // Save products to localStorage whenever products change
+  // --- Keep cache updated whenever products change ---
   useEffect(() => {
     if (products.length > 0) {
       localStorage.setItem('bijouShopProducts', JSON.stringify(products));
     }
   }, [products]);
 
-  const addProduct = (productData: Omit<Product, 'id'>) => {
-    const newId = Math.max(...products.map(p => p.id), 0) + 1;
-    const newProduct: Product = {
-      ...productData,
-      id: newId,
-    };
-    setProducts(prev => [...prev, newProduct]);
+  // --- CRUD operations ---
+  const addProduct = async (productData: Omit<Product, 'id'>) => {
+    const newId = Math.max(...products.map(p => Number(p.id) || 0), 0) + 1;
+    const newProduct: Product = { ...productData, id: newId };
+
+    setProducts(prev => [...prev, newProduct]); // optimistic
+
+    try {
+      await apiClient.createProduct(newProduct);
+      await fetchFromBackend();
+    } catch (err) {
+      console.error('Failed to add product:', err);
+    }
   };
 
-  const updateProduct = (id: number, updates: Partial<Product>) => {
+  const updateProduct = async (id: number, updates: Partial<Product>) => {
     setProducts(prev =>
-      prev.map(product =>
-        product.id === id ? { ...product, ...updates } : product
-      )
+      prev.map(product => (product.id === id ? { ...product, ...updates } : product))
     );
+
+    try {
+      await apiClient.updateProduct(id, updates);
+      await fetchFromBackend();
+    } catch (err) {
+      console.error('Failed to update product:', err);
+    }
   };
 
-  const deleteProduct = (id: number) => {
+  const deleteProduct = async (id: number) => {
     setProducts(prev => prev.filter(product => product.id !== id));
+
+    try {
+      await apiClient.deleteProduct(id);
+      await fetchFromBackend();
+    } catch (err) {
+      console.error('Failed to delete product:', err);
+    }
   };
 
-  const resetProducts = () => {
-    setProducts(initialProducts);
+  const resetProducts = async () => {
     localStorage.removeItem('bijouShopProducts');
+    loadStaticProducts();
+    await fetchFromBackend();
   };
 
   const value: ProductContextType = {
@@ -128,14 +160,11 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({ children }) =>
     updateProduct,
     deleteProduct,
     resetProducts,
-    loading,
+    status,
     error,
     fetchFromBackend,
   };
 
-  return (
-    <ProductContext.Provider value={value}>
-      {children}
-    </ProductContext.Provider>
-  );
+  return <ProductContext.Provider value={value}>{children}</ProductContext.Provider>;
 };
+

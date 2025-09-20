@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.shortcuts import redirect
 from rest_framework.routers import DefaultRouter
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
@@ -41,6 +42,9 @@ def api_root(request):
     }, status=status.HTTP_200_OK)
 
 urlpatterns = [
+    # Root redirect to API
+    path('', lambda request: redirect('/api/', permanent=False)),
+    
     # Admin
     path('admin/', admin.site.urls),
     

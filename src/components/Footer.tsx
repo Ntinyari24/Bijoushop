@@ -1,5 +1,6 @@
 import React from 'react';
 import { Heart } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Footer: React.FC = () => {
   return (
@@ -23,10 +24,10 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="font-semibold text-lg mb-4">Quick Links</h3>
             <ul className="space-y-2 text-gray-400">
-              <li><a href="#" className="hover:text-white transition-colors duration-200">About Us</a></li>
-              <li><a href="#" className="hover:text-white transition-colors duration-200">Contact</a></li>
-              <li><a href="#" className="hover:text-white transition-colors duration-200">FAQ</a></li>
-              <li><a href="#" className="hover:text-white transition-colors duration-200">Shipping Info</a></li>
+              <li><Link to="/learn-more#about-us" className="hover:text-white transition-colors duration-200">About Us</Link></li>
+              <li><Link to="/learn-more#contact" className="hover:text-white transition-colors duration-200">Contact</Link></li>
+              <li><Link to="/learn-more#faq" className="hover:text-white transition-colors duration-200">FAQ</Link></li>
+              <li><Link to="/learn-more#shipping-info" className="hover:text-white transition-colors duration-200">Shipping Info</Link></li>
             </ul>
           </div>
 
@@ -34,10 +35,10 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="font-semibold text-lg mb-4">Customer Service</h3>
             <ul className="space-y-2 text-gray-400">
-              <li><a href="#" className="hover:text-white transition-colors duration-200">Return Policy</a></li>
-              <li><a href="#" className="hover:text-white transition-colors duration-200">Size Guide</a></li>
-              <li><a href="#" className="hover:text-white transition-colors duration-200">Track Order</a></li>
-              <li><a href="#" className="hover:text-white transition-colors duration-200">Support</a></li>
+              <li><Link to="/learn-more#return-policy" className="hover:text-white transition-colors duration-200">Return Policy</Link></li>
+              <li><Link to="/learn-more#size-guide" className="hover:text-white transition-colors duration-200">Size Guide</Link></li>
+              <li><Link to="/learn-more#track-order" className="hover:text-white transition-colors duration-200">Track Order</Link></li>
+              <li><Link to="/learn-more#support" className="hover:text-white transition-colors duration-200">Support</Link></li>
             </ul>
           </div>
 

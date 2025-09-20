@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, CreditCard, MapPin } from 'lucide-react';
+import { X, CreditCard, MapPin, Smartphone } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
+import MpesaPayment from './MpesaPayment';
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface CheckoutModalProps {
 const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose }) => {
   const { state, clearCart } = useCart();
   const [currentStep, setCurrentStep] = useState(1);
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'mpesa'>('card');
   const [formData, setFormData] = useState({
     // Shipping
     firstName: '',
@@ -49,10 +51,13 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose }) => {
     }
 
     if (step === 2) {
-      if (!formData.cardNumber) newErrors.cardNumber = 'Card number is required';
-      if (!formData.expiryDate) newErrors.expiryDate = 'Expiry date is required';
-      if (!formData.cvv) newErrors.cvv = 'CVV is required';
-      if (!formData.cardholderName) newErrors.cardholderName = 'Cardholder name is required';
+      if (paymentMethod === 'card') {
+        if (!formData.cardNumber) newErrors.cardNumber = 'Card number is required';
+        if (!formData.expiryDate) newErrors.expiryDate = 'Expiry date is required';
+        if (!formData.cvv) newErrors.cvv = 'CVV is required';
+        if (!formData.cardholderName) newErrors.cardholderName = 'Cardholder name is required';
+      }
+      // M-Pesa validation is handled in the MpesaPayment component
     }
 
     setErrors(newErrors);
@@ -281,63 +286,121 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose }) => {
                     Payment Information
                   </h3>
                   
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Cardholder Name</label>
-                    <input
-                      type="text"
-                      value={formData.cardholderName}
-                      onChange={(e) => setFormData({ ...formData, cardholderName: e.target.value })}
-                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                        errors.cardholderName ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="John Doe"
-                    />
-                    {errors.cardholderName && <p className="text-red-500 text-sm mt-1">{errors.cardholderName}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Card Number</label>
-                    <input
-                      type="text"
-                      value={formData.cardNumber}
-                      onChange={(e) => setFormData({ ...formData, cardNumber: e.target.value })}
-                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                        errors.cardNumber ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="1234 5678 9012 3456"
-                    />
-                    {errors.cardNumber && <p className="text-red-500 text-sm mt-1">{errors.cardNumber}</p>}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Expiry Date</label>
-                      <input
-                        type="text"
-                        value={formData.expiryDate}
-                        onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
-                        className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-jungle-500 focus:border-transparent ${
-                          errors.expiryDate ? 'border-red-500' : 'border-gray-300'
+                  {/* Payment Method Selection */}
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-semibold text-gray-900">Choose Payment Method</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <button
+                        onClick={() => setPaymentMethod('card')}
+                        className={`p-4 border-2 rounded-lg transition-all duration-200 ${
+                          paymentMethod === 'card'
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:border-gray-300'
                         }`}
-                        placeholder="MM/YY"
-                      />
-                      {errors.expiryDate && <p className="text-red-500 text-sm mt-1">{errors.expiryDate}</p>}
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">CVV</label>
-                      <input
-                        type="text"
-                        value={formData.cvv}
-                        onChange={(e) => setFormData({ ...formData, cvv: e.target.value })}
-                        className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-jungle-500 focus:border-transparent ${
-                          errors.cvv ? 'border-red-500' : 'border-gray-300'
+                      >
+                        <div className="flex items-center space-x-3">
+                          <CreditCard className="w-6 h-6 text-blue-600" />
+                          <div className="text-left">
+                            <p className="font-semibold text-gray-900">Credit/Debit Card</p>
+                            <p className="text-sm text-gray-600">Visa, Mastercard, American Express</p>
+                          </div>
+                        </div>
+                      </button>
+                      
+                      <button
+                        onClick={() => setPaymentMethod('mpesa')}
+                        className={`p-4 border-2 rounded-lg transition-all duration-200 ${
+                          paymentMethod === 'mpesa'
+                            ? 'border-green-500 bg-green-50'
+                            : 'border-gray-200 hover:border-gray-300'
                         }`}
-                        placeholder="123"
-                      />
-                      {errors.cvv && <p className="text-red-500 text-sm mt-1">{errors.cvv}</p>}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <Smartphone className="w-6 h-6 text-green-600" />
+                          <div className="text-left">
+                            <p className="font-semibold text-gray-900">M-Pesa</p>
+                            <p className="text-sm text-gray-600">Pay with your mobile money</p>
+                          </div>
+                        </div>
+                      </button>
                     </div>
                   </div>
+                  
+                  {/* Card Payment Form */}
+                  {paymentMethod === 'card' && (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Cardholder Name</label>
+                        <input
+                          type="text"
+                          value={formData.cardholderName}
+                          onChange={(e) => setFormData({ ...formData, cardholderName: e.target.value })}
+                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                            errors.cardholderName ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                          placeholder="John Doe"
+                        />
+                        {errors.cardholderName && <p className="text-red-500 text-sm mt-1">{errors.cardholderName}</p>}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Card Number</label>
+                        <input
+                          type="text"
+                          value={formData.cardNumber}
+                          onChange={(e) => setFormData({ ...formData, cardNumber: e.target.value })}
+                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                            errors.cardNumber ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                          placeholder="1234 5678 9012 3456"
+                        />
+                        {errors.cardNumber && <p className="text-red-500 text-sm mt-1">{errors.cardNumber}</p>}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Expiry Date</label>
+                          <input
+                            type="text"
+                            value={formData.expiryDate}
+                            onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
+                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-jungle-500 focus:border-transparent ${
+                              errors.expiryDate ? 'border-red-500' : 'border-gray-300'
+                            }`}
+                            placeholder="MM/YY"
+                          />
+                          {errors.expiryDate && <p className="text-red-500 text-sm mt-1">{errors.expiryDate}</p>}
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">CVV</label>
+                          <input
+                            type="text"
+                            value={formData.cvv}
+                            onChange={(e) => setFormData({ ...formData, cvv: e.target.value })}
+                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-jungle-500 focus:border-transparent ${
+                              errors.cvv ? 'border-red-500' : 'border-gray-300'
+                            }`}
+                            placeholder="123"
+                          />
+                          {errors.cvv && <p className="text-red-500 text-sm mt-1">{errors.cvv}</p>}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* M-Pesa Payment */}
+                  {paymentMethod === 'mpesa' && (
+                    <MpesaPayment
+                      amount={state.total + 9.99 + state.total * 0.08}
+                      phoneNumber={formData.phone}
+                      onSuccess={() => {
+                        setOrderComplete(true);
+                        clearCart();
+                      }}
+                      onCancel={() => setCurrentStep(1)}
+                    />
+                  )}
                 </div>
               )}
             </div>
@@ -402,7 +465,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose }) => {
               </button>
             )}
             
-            {currentStep === 2 && (
+            {currentStep === 2 && paymentMethod === 'card' && (
               <button
                 onClick={handleSubmit}
                 disabled={isProcessing}

@@ -19,7 +19,7 @@ const ProductManagement: React.FC = () => {
     tags: [] as string[]
   });
 
-  const categories = ['Necklace', 'waistbead', 'Thighchain', 'Bracelets', 'Rings'];
+  const categories = ['Necklace', 'waistbead', 'Thighchain', 'Bracelet', 'Ring'];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -17,6 +17,7 @@ export interface Product {
   description: string;
   image: string; // Main/default image
   category: string;
+  categorySlug: string;
   rating: number;
   reviewCount: number;
   inStock: boolean;
