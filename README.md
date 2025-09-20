@@ -1,4 +1,4 @@
-# 🛒 EliteShop - Complete E-commerce Platform
+# 🛒 BijouShop - Complete E-commerce Platform
 
 A modern, full-stack e-commerce platform built with React, TypeScript, and Tailwind CSS on the frontend, designed for scalability and production deployment.
 
@@ -224,7 +224,7 @@ TypeScript compiler configuration:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/eliteshop.git
+   git clone https://github.com/yourusername/bijoushop.git
    cd eliteshop
    ```
 
